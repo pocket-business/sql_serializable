@@ -1,0 +1,14 @@
+targets:
+  $default:
+    builders:
+      sql_serializable:
+        enabled: true
+
+builders:
+  sql_serializable:
+    import: "package:sql_serializable/builder.dart"
+    builder_factories: ["sqlSerializable"]
+    build_extensions: {".dart": [".sql_serializable.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen:combining_builder"]
