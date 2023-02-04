@@ -1,6 +1,6 @@
 name: sql_serializable
 description: A code generator & runtime library for converting Dart classes to/from SQL.
-version: 0.1.0
+version: 0.1.0-dev.0
 repository: https://github.com/abitofevrything/sql_serializable
 
 environment:
