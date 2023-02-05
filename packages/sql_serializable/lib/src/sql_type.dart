@@ -153,7 +153,7 @@ mixin KeyedCollectionType<DartKey, DartValue, SqlKey, SqlValue> {
 /// A [List].
 abstract class ListType<Dart, Sql>
   with KeyedCollectionType<int, Dart, int, Sql>
-  implements SqlType<List<Dart>, List<Sql>> {
+  implements SqlType<List<Dart>, List> {
   
   @override
   final String name;
@@ -184,7 +184,7 @@ class NonNullableListType<Dart, Sql> extends ListType<Dart, Sql> {
   List<Sql> toSql(List<Dart> dart) => dart.map(valueType.toSql).toList();
 
   @override
-  List<Dart> fromSql(List<Sql> sql) => sql.map(valueType.fromSql).toList();
+  List<Dart> fromSql(List sql) => sql.cast<Sql>().map(valueType.fromSql).toList();
 }
 
 /// A [List] where the elements may be null.
@@ -205,14 +205,14 @@ class NullableListType<Dart, Sql> extends ListType<Dart?, Sql?> {
     dart.map((value) => value != null ? valueType.toSql(value) : null).toList();
 
   @override
-  List<Dart?> fromSql(List<Sql?> sql) =>
-    sql.map((value) => value != null ? valueType.fromSql(value) : null).toList();
+  List<Dart?> fromSql(List sql) =>
+    sql.cast<Sql?>().map((value) => value != null ? valueType.fromSql(value) : null).toList();
 }
 
 /// A [Set].
 abstract class SetType<Dart, Sql>
   with KeyedCollectionType<int, Dart, int, Sql>
-  implements SqlType<Set<Dart>, List<Sql>> {
+  implements SqlType<Set<Dart>, List> {
 
   @override
   final String name;
@@ -243,7 +243,7 @@ class NonNullableSetType<Dart, Sql> extends SetType<Dart, Sql> {
   List<Sql> toSql(Set<Dart> dart) => dart.map(valueType.toSql).toList();
 
   @override
-  Set<Dart> fromSql(List<Sql> sql) => sql.map(valueType.fromSql).toSet();
+  Set<Dart> fromSql(List sql) => sql.cast<Sql>().map(valueType.fromSql).toSet();
 }
 /// A [Set] where the elements may be null.
 /// 
@@ -263,14 +263,14 @@ class NullableSetType<Dart, Sql> extends SetType<Dart?, Sql?> {
     dart.map((value) => value != null ? valueType.toSql(value) : null).toList();
 
   @override
-  Set<Dart?> fromSql(List<Sql?> sql) =>
-    sql.map((value) => value != null ? valueType.fromSql(value) : null).toSet();
+  Set<Dart?> fromSql(List sql) =>
+    sql.cast<Sql?>().map((value) => value != null ? valueType.fromSql(value) : null).toSet();
 }
 
 /// A [Map].
 abstract class MapType<DartKey, DartValue, SqlKey, SqlValue>
   with KeyedCollectionType<DartKey, DartValue, SqlKey, SqlValue>
-  implements SqlType<Map<DartKey, DartValue>, Map<SqlKey, SqlValue>> {
+  implements SqlType<Map<DartKey, DartValue>, Map> {
 
   @override
   final String name;
@@ -304,7 +304,7 @@ class NonNullableKeyNonNullableValueMapType<DartKey, DartValue, SqlKey, SqlValue
   }) : super._();
 
   @override
-  Map<DartKey, DartValue> fromSql(Map<SqlKey, SqlValue> sql) => sql.map(
+  Map<DartKey, DartValue> fromSql(Map sql) => sql.map(
     (key, value) => MapEntry(keyType.fromSql(key), valueType.fromSql(value)),
   );
   
@@ -340,7 +340,7 @@ class NullableKeyNonNullableValueMapType<DartKey, DartValue, SqlKey, SqlValue>
   }) : super._();
 
   @override
-  Map<DartKey?, DartValue> fromSql(Map<SqlKey?, SqlValue> sql) => sql.map(
+  Map<DartKey?, DartValue> fromSql(Map sql) => sql.map(
     (key, value) => MapEntry(key != null ? keyType.fromSql(key) : null, valueType.fromSql(value)),
   );
   
@@ -376,7 +376,7 @@ class NonNullableKeyNullableValueMapType<DartKey, DartValue, SqlKey, SqlValue>
   }) : super._();
 
   @override
-  Map<DartKey, DartValue?> fromSql(Map<SqlKey, SqlValue?> sql) => sql.map(
+  Map<DartKey, DartValue?> fromSql(Map sql) => sql.map(
     (key, value) => MapEntry(keyType.fromSql(key), value != null ? valueType.fromSql(value) : null),
   );
   
@@ -413,7 +413,7 @@ class NullableKeyNullableValueMapType<DartKey, DartValue, SqlKey, SqlValue>
   }) : super._();
 
   @override
-  Map<DartKey?, DartValue?> fromSql(Map<SqlKey?, SqlValue?> sql) => sql.map(
+  Map<DartKey?, DartValue?> fromSql(Map sql) => sql.map(
     (key, value) => MapEntry(
       key != null ? keyType.fromSql(key) : null,
       value != null ? valueType.fromSql(value) : null,
