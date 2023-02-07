@@ -1,6 +1,6 @@
 name: sql_serializable_postgres
 description: PostgreSQL support for sql_serializable.
-version: 0.1.0-dev.0
+version: 0.1.1-dev.0
 repository: https://github.com/abitofevrything/sql_serializable
 
 environment:
