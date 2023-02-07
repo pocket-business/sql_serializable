@@ -188,7 +188,7 @@ class PostgresDatabase extends SqlSerializableDatabase {
       final newId = await insert(sql);
 
       return await context.query(
-        'UPDATE "${sql.table.name}" WHERE id = @newId SET id = @oldId',
+        'UPDATE "${sql.table.name}" SET id = @oldId WHERE id = @newId;',
         substitutionValues: {
           'newId': newId,
           'oldId': id,
