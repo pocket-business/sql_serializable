@@ -55,7 +55,8 @@ String serializedConverterFor({
   }
 
   if (type is! InterfaceType) {
-    throw Exception('Unsupported type: ${type.getDisplayString(withNullability: false)}');
+    throw Exception(
+        'Unsupported type: ${type.getDisplayString(withNullability: false)}');
   }
 
   if (type.isDartCoreList || type.isDartCoreSet) {
@@ -102,7 +103,8 @@ String serializedConverterFor({
   }
 
   final table = type.element.fields.singleWhere(
-    (element) => element.isStatic && element.isConst && element.name == 'table',
+    // (element) => element.isStatic && element.isConst && element.name == 'table',
+    (element) => element.name == 'table',
     orElse: () => throw Exception(
       'Unsupported type: ${type.getDisplayString(withNullability: false)}'
       ' must provide a static const table field',
@@ -110,7 +112,7 @@ String serializedConverterFor({
   );
 
   // dynamic most likely indicates an ungenerated reference.
-  if (!table.type.isDynamic) {
+  if (table.type is! DynamicType) {
     final tableType = TypeChecker.fromRuntime(Table);
 
     if (!tableType.isAssignableFromType(table.type)) {
