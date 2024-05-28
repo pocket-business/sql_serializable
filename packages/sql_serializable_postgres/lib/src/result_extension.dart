@@ -1,10 +1,10 @@
-import 'package:postgres/postgres.dart';
+import 'package:postgres/postgres.dart' as pg;
 import 'package:sql_serializable/sql_serializable.dart';
 import 'package:sql_serializable_postgres/src/database.dart';
 import 'package:sql_serializable_postgres/src/types.dart';
 
-/// Utilities for converting [PostgreSQLResult]s to [Sql].
-extension MultipleResults on PostgreSQLResult {
+/// Utilities for converting [Result]s to [Sql].
+extension MultipleResults on pg.Result {
   /// Convert this [PostgreSQLResult] to a list of [Sql] from [table].
   ///
   /// Each row in this result must contain every contain every column in [table] with the correct
@@ -14,7 +14,7 @@ extension MultipleResults on PostgreSQLResult {
 }
 
 /// Utilities for converting [PostgreSQLResultRow]s to [Sql].
-extension SingleResult on PostgreSQLResultRow {
+extension SingleResult on pg.ResultRow {
   /// Convert this [PostgreSQLResultRow] to an [Sql] from [table].
   ///
   /// This row must contain every column in [table] with the correct data type, as well as the
@@ -39,7 +39,8 @@ extension SingleResult on PostgreSQLResultRow {
         if (isNull) {
           fields[column.name] = null;
         } else {
-          fields[column.name] = await column.type.fetch(row['id'] as int, table, database);
+          fields[column.name] =
+              await column.type.fetch(row['id'] as int, table, database);
         }
       }
     }

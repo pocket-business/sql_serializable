@@ -4,13 +4,12 @@ version: 0.1.1-dev.0
 repository: https://github.com/abitofevrything/sql_serializable
 
 environment:
-  sdk: '>=3.0.0-151.0.dev <4.0.0'
+  sdk: '>=3.3.2 <4.0.0'
 
 dependencies:
   sql_serializable: ^0.1.0-dev.0
-  postgres: ^2.5.2
-  collection: ^1.17.1
+  postgres: ^3.2.1
+  collection: ^1.18.0
 
 dev_dependencies:
-  lints: ^2.0.0
-  test: ^1.21.0
+  lints: ^4.0.0

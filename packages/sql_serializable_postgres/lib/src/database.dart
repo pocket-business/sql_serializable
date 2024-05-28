@@ -1,25 +1,25 @@
 import 'dart:async';
 
-import 'package:postgres/postgres.dart';
+import 'package:postgres/postgres.dart' as pg;
 import 'package:sql_serializable_postgres/sql_serializable_postgres.dart';
 import 'package:sql_serializable_postgres/src/types.dart';
 
 /// An [SqlSerializableDatabase] interface over a PostgreSQL database.
 class PostgresDatabase extends SqlSerializableDatabase {
   /// The connection this database is using.
-  final PostgreSQLConnection connection;
+  final pg.Connection connection;
 
   /// The current execution context.
-  /// 
-  /// Prefer accessing this over [connection] as it will correctly return the transaction context if
-  /// in a transaction.
-  PostgreSQLExecutionContext get context => Zone.current[#_context] ?? connection;
+  ///
+  /// Prefer accessing this over [connection] as it will correctly
+  /// return the transaction context if in a transaction.
+  pg.Session get context => Zone.current[#_context] ?? connection;
 
   @override
   late final PostgresDatabaseMigrations migrations;
 
   /// Create a new [PostgresDatabase] from a [PostgreSQLConnection].
-  /// 
+  ///
   /// The [connection] must be opened before using this database.
   PostgresDatabase(
     this.connection, {
@@ -36,15 +36,17 @@ class PostgresDatabase extends SqlSerializableDatabase {
   }) async {
     await migrations.ensureReady(table);
 
-    final result = await context.query(query, substitutionValues: substitutions);
+    final result = await context.execute(query, parameters: substitutions);
 
     return {
-      for (final row in result) row.toColumnMap()['id'] as int: await row.toSql(table, this),
+      for (final row in result)
+        row.toColumnMap()['id'] as int: await row.toSql(table, this),
     };
   }
 
   @override
-  Future<Map<int, Sql<T>>> list<T>(Table<T> table, {int? limit, int? page}) async {
+  Future<Map<int, Sql<T>>> list<T>(Table<T> table,
+      {int? limit, int? page}) async {
     return await query(
       table,
       'SELECT * FROM "${table.name}" LIMIT @limit OFFSET @offset;',
@@ -84,14 +86,15 @@ class PostgresDatabase extends SqlSerializableDatabase {
           case ListType():
           case SetType():
           case MapType():
-            final storageTable = (column.type as KeyedCollectionType).storageTableFor(table);
+            final storageTable =
+                (column.type as KeyedCollectionType).storageTableFor(table);
 
             await query(
               storageTable,
               'DELETE FROM "${storageTable.name}" WHERE owner = @id',
               substitutions: {
                 'id': id,
-              },  
+              },
             );
         }
       }
@@ -100,7 +103,9 @@ class PostgresDatabase extends SqlSerializableDatabase {
         table,
         'DELETE FROM "${table.name}" WHERE id = @id RETURNING *;',
         substitutions: {'id': id},
-      )).values.single;
+      ))
+          .values
+          .single;
 
       // Cascade deletion to other tables
       for (final column in table.columns) {
@@ -147,7 +152,8 @@ class PostgresDatabase extends SqlSerializableDatabase {
           if (value == null) {
             substitutions[columnVariable] = null;
           } else {
-            substitutions[columnVariable] = await column.type.encode(value, this);
+            substitutions[columnVariable] =
+                await column.type.encode(value, this);
           }
         } else {
           final value = sql.fields[column.name];
@@ -159,14 +165,15 @@ class PostgresDatabase extends SqlSerializableDatabase {
         }
       }
 
-      final result = await context.query(
+      final result = await context.execute(
         'INSERT INTO "${sql.table.name}" (${columns.join(', ')}) VALUES (${values.join(', ')}) RETURNING id',
-        substitutionValues: substitutions,
+        parameters: substitutions,
       );
 
       final id = result.single.single as int;
 
-      for (final externalColumn in sql.table.columns.where((column) => !column.type.hasColumn)) {
+      for (final externalColumn
+          in sql.table.columns.where((column) => !column.type.hasColumn)) {
         final value = sql.fields[externalColumn.name];
 
         if (value == null) {
@@ -187,9 +194,9 @@ class PostgresDatabase extends SqlSerializableDatabase {
 
       final newId = await insert(sql);
 
-      return await context.query(
+      return await context.execute(
         'UPDATE "${sql.table.name}" SET id = @oldId WHERE id = @newId;',
-        substitutionValues: {
+        parameters: {
           'newId': newId,
           'oldId': id,
         },
@@ -205,7 +212,7 @@ class PostgresDatabase extends SqlSerializableDatabase {
 
     late final T returnValue;
 
-    await connection.transaction((connection) async {
+    await connection.runTx((connection) async {
       returnValue = await runZoned(callback, zoneValues: {
         #_context: connection,
         #_transaction: true,

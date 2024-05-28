@@ -27,12 +27,14 @@ class PostgresDatabaseMigrations extends SqlMigrations<PostgresDatabase> {
       }
     }
 
-    final tableInfo = (await _getExistingTables(table.name)).map((row) => row.toColumnMap());
+    final tableInfo =
+        (await _getExistingTables(table.name)).map((row) => row.toColumnMap());
 
     if (tableInfo.isEmpty) {
       await addTable(table);
     } else {
-      final databaseColumns = (await _getColumns(table.name)).map((row) => row.toColumnMap());
+      final databaseColumns =
+          (await _getColumns(table.name)).map((row) => row.toColumnMap());
 
       for (var localColumn in table.columns) {
         if (!localColumn.type.hasColumn) {
@@ -52,21 +54,26 @@ class PostgresDatabaseMigrations extends SqlMigrations<PostgresDatabase> {
           continue;
         }
 
-        final needsUpdate = databaseColumn['data_type'] != localColumn.type.postgresType ||
-            databaseColumn['is_nullable'] != (localColumn.isNullable ? 'YES' : 'NO') ||
-            (await _getReference(table.name, localColumn.name)) != localColumn.type.referencedTable;
+        final needsUpdate =
+            databaseColumn['data_type'] != localColumn.type.postgresType ||
+                databaseColumn['is_nullable'] !=
+                    (localColumn.isNullable ? 'YES' : 'NO') ||
+                (await _getReference(table.name, localColumn.name)) !=
+                    localColumn.type.referencedTable;
 
         if (needsUpdate) {
           await updateColumn(table, localColumn);
         }
       }
 
-      final databaseColumnNames = databaseColumns.map((row) => row['column_name']);
+      final databaseColumnNames =
+          databaseColumns.map((row) => row['column_name']);
       final localColumnNames = table.columns.map(
         (column) => column.type.hasColumn ? column.name : column.nullMarkerName,
       );
 
-      for (final columnName in databaseColumnNames.toSet().difference(localColumnNames.toSet())) {
+      for (final columnName
+          in databaseColumnNames.toSet().difference(localColumnNames.toSet())) {
         if (columnName == 'id') {
           continue;
         }
@@ -88,7 +95,9 @@ class PostgresDatabaseMigrations extends SqlMigrations<PostgresDatabase> {
   Future<void> addTable(Table table) async {
     final columns = [
       'id serial PRIMARY KEY NOT NULL',
-      ...table.columns.where((column) => column.type.hasColumn).map(columnDefinition),
+      ...table.columns
+          .where((column) => column.type.hasColumn)
+          .map(columnDefinition),
       ...table.columns
           .where((column) => !column.type.hasColumn)
           .map((column) => Column(
@@ -99,21 +108,21 @@ class PostgresDatabaseMigrations extends SqlMigrations<PostgresDatabase> {
           .map(columnDefinition),
     ];
 
-    await database.context.query(
+    await database.context.execute(
       'CREATE TABLE ${table.name} (${columns.join(', ')});',
     );
   }
 
   @override
   Future<void> addColumn(Table table, Column column) async {
-    await database.context.query(
+    await database.context.execute(
       'ALTER TABLE "${table.name}" ADD COLUMN ${columnDefinition(column)};',
     );
   }
 
   @override
   Future<void> removeColumn(Table table, String column) async {
-    await database.context.query(
+    await database.context.execute(
       'ALTER TABLE "${table.name}" DROP COLUMN "$column";',
     );
   }
@@ -131,10 +140,11 @@ class PostgresDatabaseMigrations extends SqlMigrations<PostgresDatabase> {
       // TODO: Update references
     ];
 
-    final alterationsList =
-        alterations.map((alteration) => 'ALTER COLUMN "${column.name}" $alteration').join(', ');
+    final alterationsList = alterations
+        .map((alteration) => 'ALTER COLUMN "${column.name}" $alteration')
+        .join(', ');
 
-    await database.context.query(
+    await database.context.execute(
       'ALTER TABLE "${table.name}" $alterationsList;',
     );
   }
@@ -163,17 +173,17 @@ class PostgresDatabaseMigrations extends SqlMigrations<PostgresDatabase> {
     return ret.toString();
   }
 
-  Future<PostgreSQLResult> _getExistingTables(String tableName) {
-    return database.context.query(
+  Future<Result> _getExistingTables(String tableName) {
+    return database.context.execute(
       'SELECT tablename FROM pg_catalog.pg_tables WHERE tablename = @table;',
-      substitutionValues: {
+      parameters: {
         'table': tableName,
       },
     );
   }
 
-  Future<PostgreSQLResult> _getColumns(String tableName) {
-    return database.context.query(
+  Future<Result> _getColumns(String tableName) {
+    return database.context.execute(
       '''
         SELECT
           col.column_name,
@@ -184,14 +194,14 @@ class PostgresDatabaseMigrations extends SqlMigrations<PostgresDatabase> {
         WHERE
           col.table_name = @table;
       ''',
-      substitutionValues: {
+      parameters: {
         'table': tableName,
       },
     );
   }
 
   Future<String?> _getReference(String tableName, String columnName) async {
-    final referencedTable = await database.context.query(
+    final referencedTable = await database.context.execute(
       '''
         select
           (select r.relname from pg_class r where r.oid = c.conrelid) as table,
@@ -204,7 +214,7 @@ class PostgresDatabaseMigrations extends SqlMigrations<PostgresDatabase> {
           and c.conkey @> (select array_agg(attnum) from pg_attribute
             where attname = @column and attrelid = c.conrelid);
       ''',
-      substitutionValues: {
+      parameters: {
         'table': tableName,
         'column': columnName,
       },
